@@ -153,7 +153,7 @@ Receive your urgency level:
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/SmartTriage.git
+git clone https://github.com/Shlokyadav-0315/SmartTriage.git
 cd SmartTriage
 ```
 
@@ -185,7 +185,7 @@ php -S localhost:8000
 
 ### For Patients
 
-1. **Access the App**: Open the [live demo](https://yourusername.github.io/SmartTriage) or run locally
+1. **Access the App**: Open the [live demo](https://Shlokyadav-0315.github.io/SmartTriage) or run locally
 2. **Start Assessment**: Click "Start Your Assessment"
 3. **Fill Information**: Complete all four steps
 4. **Get Results**: Review your triage level and recommendations
@@ -283,13 +283,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Libraries**: TailwindCSS, jsPDF
 - **Healthcare Data**: Sample facility data for demonstration purposes
 
----
+--
 
 ## 📞 Contact & Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/SmartTriage/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/SmartTriage/discussions)
-- **Email**: your.email@example.com
+- **Issues**: [GitHub Issues](https://github.com/Shlokyadav-0315/SmartTriage/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Shlokyadav-0315/SmartTriage/discussions)
 
 ---
 
@@ -297,7 +296,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you find this project useful, please consider giving it a star ⭐
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/SmartTriage&type=Date)](https://star-history.com/#yourusername/SmartTriage&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Shlokyadav-0315/SmartTriage&type=Date)](https://star-history.com/Shlokyadav-0315/SmartTriage&Date)
 
 ---
 
