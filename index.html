@@ -1,0 +1,1942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartTriage - Your Healthcare Navigator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .app-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .symptom-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .symptom-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .symptom-card:hover::before {
+            left: 100%;
+        }
+
+        .symptom-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .symptom-card.selected {
+            border: 3px solid #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            transform: scale(1.05);
+        }
+
+        .floating-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .slide-in-left {
+            animation: slideInLeft 0.6s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .slide-in-right {
+            animation: slideInRight 0.6s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .pulse-glow {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(102, 126, 234, 0.8);
+            }
+        }
+
+        .urgency-badge {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .urgency-badge::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            bottom: -50%;
+            left: -50%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
+        }
+
+        .facility-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .facility-card:hover {
+            border-left-color: #667eea;
+            transform: translateX(5px);
+            box-shadow: -5px 5px 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .custom-input {
+            transition: all 0.3s ease;
+            border: 2px solid #e5e7eb;
+        }
+
+        .custom-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .pain-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.5);
+            transition: all 0.2s;
+        }
+
+        .pain-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .pain-slider::-webkit-slider-track {
+            height: 8px;
+            background: linear-gradient(to right, #84fab0, #ffd93d, #ff6b6b);
+            border-radius: 4px;
+        }
+
+        .step-indicator {
+            position: relative;
+        }
+
+        .step-indicator::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: #e5e7eb;
+            top: 20px;
+            left: 50%;
+            z-index: -1;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            transition: all 0.3s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-circle.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+            transform: scale(1.2);
+        }
+
+        .step-circle.completed {
+            background: #10b981;
+            color: white;
+        }
+
+        .step-circle.pending {
+            background: white;
+            border: 2px solid #e5e7eb;
+            color: #9ca3af;
+        }
+
+        .bot-message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 20px 20px 20px 4px;
+            max-width: 80%;
+            animation: slideInLeft 0.5s ease-out;
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .emergency-pulse {
+            animation: emergencyPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes emergencyPulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .map-marker {
+            animation: bounce 1s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .loader {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .success-checkmark {
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="sticky top-0 z-50 bg-white shadow-md">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-14 h-14 bg-gradient-to-br from-purple-500 via-indigo-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
+                            <!-- Medical Cross -->
+                            <svg class="w-8 h-8 text-white absolute" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M10 2h4v7h7v4h-7v9h-4v-9H3v-4h7V2z"/>
+                            </svg>
+                            <!-- Pulse/Heartbeat wave -->
+                            <svg class="w-10 h-10 text-white opacity-40 absolute" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h3l2-4 4 8 2-4h3"/>
+                            </svg>
+                            <!-- AI Circuit -->
+                            <svg class="w-12 h-12 text-white opacity-20 absolute -right-1 -bottom-1" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+                            </svg>
+                            <!-- Main Logo Icon - Stethoscope + Shield -->
+                            <div class="relative z-10">
+                                <svg class="w-9 h-9 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.09-.16-.26-.25-.44-.25-.06 0-.12.01-.17.03l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.06-.02-.12-.03-.18-.03-.17 0-.34.09-.43.25l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.09.16.26.25.44.25.06 0 .12-.01.17-.03l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.06.02.12.03.18.03.17 0 .34-.09.43-.25l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zm-1.98-1.71c.04.31.05.52.05.73 0 .21-.02.43-.05.73l-.14 1.13.89.7 1.08.84-.7 1.21-1.27-.51-1.04-.42-.9.68c-.43.32-.84.56-1.25.73l-1.06.43-.16 1.13-.2 1.35h-1.4l-.19-1.35-.16-1.13-1.06-.43c-.43-.18-.83-.41-1.23-.71l-.91-.7-1.06.43-1.27.51-.7-1.21 1.08-.84.89-.7-.14-1.13c-.03-.31-.05-.54-.05-.74s.02-.43.05-.73l.14-1.13-.89-.7-1.08-.84.7-1.21 1.27.51 1.04.42.9-.68c.43-.32.84-.56 1.25-.73l1.06-.43.16-1.13.2-1.35h1.39l.19 1.35.16 1.13 1.06.43c.43.18.83.41 1.23.71l.91.7 1.06-.43 1.27-.51.7 1.21-1.07.85-.89.7.14 1.13zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div>
+                            <h1 id="appTitle" class="text-2xl font-bold gradient-text">SmartTriage</h1>
+                            <p id="appSubtitle" class="text-xs text-gray-500">Your Healthcare Navigator</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="showLanguageSelector()" class="p-2 rounded-lg hover:bg-gray-100 transition">
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/>
+                            </svg>
+                        </button>
+                        <button onclick="showHelp()" class="p-2 rounded-lg hover:bg-gray-100 transition">
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+            <!-- Step Indicators -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center relative step-indicator">
+                    <div class="flex-1 flex justify-center">
+                        <div class="text-center">
+                            <div id="stepCircle1" class="step-circle active mx-auto">1</div>
+                            <p class="text-xs mt-2 font-medium">Info</p>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex justify-center">
+                        <div class="text-center">
+                            <div id="stepCircle2" class="step-circle pending mx-auto">2</div>
+                            <p class="text-xs mt-2 font-medium">Symptoms</p>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex justify-center">
+                        <div class="text-center">
+                            <div id="stepCircle3" class="step-circle pending mx-auto">3</div>
+                            <p class="text-xs mt-2 font-medium">Assessment</p>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex justify-center">
+                        <div class="text-center">
+                            <div id="stepCircle4" class="step-circle pending mx-auto">4</div>
+                            <p class="text-xs mt-2 font-medium">Results</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Welcome Screen -->
+            <div id="welcomeScreen" class="fade-in-up">
+                <div class="glass-card rounded-3xl p-8 md:p-12 text-center">
+                    <div class="floating-icon mb-6 text-7xl">🏥</div>
+                    <h2 class="text-4xl md:text-5xl font-bold gradient-text mb-4">Welcome to SmartTriage</h2>
+                    <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">Get AI-powered health assessments and find the right care facility near you in minutes</p>
+
+                    <div class="grid md:grid-cols-3 gap-6 mb-10">
+                        <div class="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl">
+                            <div class="text-4xl mb-3">⚡</div>
+                            <h3 class="font-semibold text-gray-800 mb-2">Quick Assessment</h3>
+                            <p class="text-sm text-gray-600">Get your urgency level in minutes</p>
+                        </div>
+                        <div class="p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl">
+                            <div class="text-4xl mb-3">🤖</div>
+                            <h3 class="font-semibold text-gray-800 mb-2">AI-Powered</h3>
+                            <p class="text-sm text-gray-600">Smart triage recommendations</p>
+                        </div>
+                        <div class="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl">
+                            <div class="text-4xl mb-3">📍</div>
+                            <h3 class="font-semibold text-gray-800 mb-2">Find Care</h3>
+                            <p class="text-sm text-gray-600">Locate nearby facilities instantly</p>
+                        </div>
+                    </div>
+
+                    <button onclick="startAssessment()" class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-12 py-4 rounded-full text-lg font-semibold hover:shadow-2xl transform hover:scale-105 transition-all duration-300 pulse-glow">
+                        Start Your Assessment
+                        <svg class="w-5 h-5 inline ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 1: Patient Information -->
+            <div id="step1" class="hidden">
+                <div class="glass-card rounded-3xl p-8 md:p-10 slide-in-left">
+                    <div class="flex items-center mb-6">
+                        <div class="feature-icon mr-4">👤</div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-800">Tell us about yourself</h2>
+                            <p class="text-gray-600">We need some basic information to help you</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Full Name *</label>
+                            <input type="text" id="patientName" class="w-full px-4 py-3 custom-input rounded-xl outline-none" placeholder="Enter your full name" required>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Age *</label>
+                                <input type="number" id="patientAge" class="w-full px-4 py-3 custom-input rounded-xl outline-none" placeholder="Your age" min="0" max="120" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Gender *</label>
+                                <select id="patientGender" class="w-full px-4 py-3 custom-input rounded-xl outline-none">
+                                    <option value="">Select gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                    <option value="prefer-not-to-say">Prefer not to say</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Contact Number</label>
+                                <input type="tel" id="patientPhone" class="w-full px-4 py-3 custom-input rounded-xl outline-none" placeholder="+91 98765 43210">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                                <input type="email" id="patientEmail" class="w-full px-4 py-3 custom-input rounded-xl outline-none" placeholder="your.email@example.com">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Known Allergies</label>
+                            <textarea id="patientAllergies" class="w-full px-4 py-3 custom-input rounded-xl outline-none" rows="2" placeholder="e.g., Penicillin, Peanuts, None"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Current Medications</label>
+                            <textarea id="patientMedications" class="w-full px-4 py-3 custom-input rounded-xl outline-none" rows="2" placeholder="List any medications you're currently taking"></textarea>
+                        </div>
+
+                        <div class="flex justify-between pt-6">
+                            <button onclick="goToWelcome()" class="px-8 py-3 bg-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-300 transition">
+                                Back
+                            </button>
+                            <button onclick="goToStep2()" class="px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full font-semibold hover:shadow-xl transform hover:scale-105 transition">
+                                Continue
+                                <svg class="w-5 h-5 inline ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Symptoms -->
+            <div id="step2" class="hidden">
+                <div class="glass-card rounded-3xl p-8 md:p-10 slide-in-right">
+                    <div class="flex items-center mb-6">
+                        <div class="feature-icon mr-4">🩺</div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-800">What brings you here?</h2>
+                            <p class="text-gray-600">Tell us about your symptoms</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-4">What type of symptoms are you experiencing? *</label>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div onclick="selectCategory('pain', this)" class="symptom-card p-6 bg-white rounded-2xl border-2 border-gray-200 text-center">
+                                    <div class="text-5xl mb-3">⚡</div>
+                                    <p class="font-semibold text-gray-800">Pain</p>
+                                </div>
+                                <div onclick="selectCategory('respiratory', this)" class="symptom-card p-6 bg-white rounded-2xl border-2 border-gray-200 text-center">
+                                    <div class="text-5xl mb-3">🫁</div>
+                                    <p class="font-semibold text-gray-800">Respiratory</p>
+                                </div>
+                                <div onclick="selectCategory('digestive', this)" class="symptom-card p-6 bg-white rounded-2xl border-2 border-gray-200 text-center">
+                                    <div class="text-5xl mb-3">🍽️</div>
+                                    <p class="font-semibold text-gray-800">Digestive</p>
+                                </div>
+                                <div onclick="selectCategory('fever', this)" class="symptom-card p-6 bg-white rounded-2xl border-2 border-gray-200 text-center">
+                                    <div class="text-5xl mb-3">🌡️</div>
+                                    <p class="font-semibold text-gray-800">Fever</p>
+                                </div>
+                                <div onclick="selectCategory('injury', this)" class="symptom-card p-6 bg-white rounded-2xl border-2 border-gray-200 text-center">
+                                    <div class="text-5xl mb-3">🩹</div>
+                                    <p class="font-semibold text-gray-800">Injury</p>
+                                </div>
+                                <div onclick="selectCategory('neurological', this)" class="symptom-card p-6 bg-white rounded-2xl border-2 border-gray-200 text-center">
+                                    <div class="text-5xl mb-3">🧠</div>
+                                    <p class="font-semibold text-gray-800">Neurological</p>
+                                </div>
+                            </div>
+                            <input type="hidden" id="symptomCategory">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Describe your symptoms *</label>
+                            <textarea id="symptomDescription" class="w-full px-4 py-3 custom-input rounded-xl outline-none" rows="4" placeholder="Please describe what you're experiencing in detail..."></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">When did it start? *</label>
+                            <select id="symptomDuration" class="w-full px-4 py-3 custom-input rounded-xl outline-none">
+                                <option value="">Select duration</option>
+                                <option value="less-than-hour">Less than 1 hour ago</option>
+                                <option value="1-6-hours">1-6 hours ago</option>
+                                <option value="6-24-hours">6-24 hours ago</option>
+                                <option value="1-3-days">1-3 days ago</option>
+                                <option value="more-than-3-days">More than 3 days ago</option>
+                                <option value="more-than-week">More than a week ago</option>
+                            </select>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-2xl">
+                            <label class="block text-sm font-semibold text-gray-700 mb-4">Pain Level (if applicable)</label>
+                            <div class="flex items-center space-x-4">
+                                <input type="range" id="painLevel" min="0" max="10" value="0" class="flex-1 pain-slider" oninput="updatePainLabel(this.value)">
+                                <div class="flex flex-col items-center">
+                                    <span id="painLevelLabel" class="text-4xl font-bold gradient-text">0</span>
+                                    <span class="text-xs text-gray-500">/ 10</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-500 mt-2">
+                                <span>😊 No pain</span>
+                                <span>😰 Worst pain</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">⚠️ Check if any apply:</label>
+                            <div class="space-y-3">
+                                <label class="flex items-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" id="symptomDifficultBreathing" class="w-5 h-5 text-purple-600 rounded">
+                                    <span class="ml-3 text-gray-700">Difficulty breathing or shortness of breath</span>
+                                </label>
+                                <label class="flex items-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" id="symptomChestPain" class="w-5 h-5 text-purple-600 rounded">
+                                    <span class="ml-3 text-gray-700">Chest pain or pressure</span>
+                                </label>
+                                <label class="flex items-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" id="symptomConfusion" class="w-5 h-5 text-purple-600 rounded">
+                                    <span class="ml-3 text-gray-700">Confusion or difficulty speaking</span>
+                                </label>
+                                <label class="flex items-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" id="symptomBleeding" class="w-5 h-5 text-purple-600 rounded">
+                                    <span class="ml-3 text-gray-700">Severe bleeding or injury</span>
+                                </label>
+                                <label class="flex items-center p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-red-300 cursor-pointer transition">
+                                    <input type="checkbox" id="symptomUnconscious" class="w-5 h-5 text-purple-600 rounded">
+                                    <span class="ml-3 text-gray-700">Loss of consciousness or fainting</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between pt-6">
+                            <button onclick="goToStep1()" class="px-8 py-3 bg-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-300 transition">
+                                Back
+                            </button>
+                            <button onclick="goToStep3()" class="px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full font-semibold hover:shadow-xl transform hover:scale-105 transition">
+                                Analyze Symptoms
+                                <svg class="w-5 h-5 inline ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Triage Assessment -->
+            <div id="step3" class="hidden">
+                <div class="glass-card rounded-3xl p-8 md:p-10 fade-in-up">
+                    <div class="text-center mb-8">
+                        <div class="inline-block p-4 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full mb-4">
+                            <svg class="w-16 h-16 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-3xl font-bold text-gray-800 mb-2">Your Assessment Results</h2>
+                        <p class="text-gray-600">Based on the information you provided</p>
+                    </div>
+
+                    <div id="triageResult" class="mb-8">
+                        <!-- Dynamic content will be inserted here -->
+                    </div>
+
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-5 rounded-lg mb-6">
+                        <div class="flex items-start">
+                            <svg class="h-6 w-6 text-yellow-600 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/>
+                            </svg>
+                            <div>
+                                <p class="font-semibold text-yellow-800 mb-1">Medical Disclaimer</p>
+                                <p class="text-sm text-yellow-700">This is an AI-assisted assessment and should not replace professional medical advice. If you're experiencing a life-threatening emergency, call 108 or 102 immediately.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="recommendations" class="space-y-4 mb-8">
+                        <!-- Dynamic recommendations will be inserted here -->
+                    </div>
+
+                    <div class="flex justify-between pt-6">
+                        <button onclick="goToStep2()" class="px-8 py-3 bg-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-300 transition">
+                            Back
+                        </button>
+                        <button onclick="goToStep4()" class="px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full font-semibold hover:shadow-xl transform hover:scale-105 transition">
+                            Find Facilities
+                            <svg class="w-5 h-5 inline ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Facility Finder & Summary -->
+            <div id="step4" class="hidden">
+                <div class="space-y-6 fade-in-up">
+                    <!-- Find Facilities -->
+                    <div class="glass-card rounded-3xl p-8 md:p-10">
+                        <div class="flex items-center mb-6">
+                            <div class="feature-icon mr-4">📍</div>
+                            <div>
+                                <h2 class="text-3xl font-bold text-gray-800">Find Nearby Care</h2>
+                                <p class="text-gray-600">Locate healthcare facilities near you</p>
+                            </div>
+                        </div>
+
+                        <div class="flex space-x-3 mb-6">
+                            <input type="text" id="userLocation" class="flex-1 px-4 py-3 custom-input rounded-xl outline-none" placeholder="Enter your city or PIN code">
+                            <button onclick="getCurrentLocation()" class="px-6 py-3 bg-purple-100 text-purple-700 rounded-xl hover:bg-purple-200 transition font-semibold">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                </svg>
+                            </button>
+                            <button onclick="searchFacilities()" class="px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-xl transition">
+                                Search
+                            </button>
+                        </div>
+
+                        <div id="facilitiesMap" class="hidden mb-6 h-64 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center relative overflow-hidden">
+                            <div class="text-center z-10">
+                                <div class="map-marker text-6xl mb-2">📍</div>
+                                <p class="text-gray-700 font-semibold">Interactive Map View</p>
+                                <p class="text-sm text-gray-600">Showing nearby facilities</p>
+                            </div>
+                            <div class="absolute inset-0 opacity-20">
+                                <div class="absolute top-10 left-10 w-20 h-20 bg-purple-400 rounded-full"></div>
+                                <div class="absolute bottom-10 right-10 w-32 h-32 bg-indigo-400 rounded-full"></div>
+                                <div class="absolute top-1/2 left-1/2 w-24 h-24 bg-pink-400 rounded-full"></div>
+                            </div>
+                        </div>
+
+                        <div id="facilitiesList" class="hidden space-y-4">
+                            <!-- Dynamic facility list will be inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- Download Summary -->
+                    <div class="glass-card rounded-3xl p-8 md:p-10">
+                        <div class="flex items-center mb-6">
+                            <div class="feature-icon mr-4">📄</div>
+                            <div>
+                                <h2 class="text-3xl font-bold text-gray-800">Medical Intake Summary</h2>
+                                <p class="text-gray-600">Download your complete health summary</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl mb-6">
+                            <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                                </svg>
+                                What's included:
+                            </h3>
+                            <div class="grid md:grid-cols-2 gap-3 text-sm text-gray-700">
+                                <div class="flex items-start">
+                                    <span class="text-green-500 mr-2">✓</span>
+                                    <span>Personal & contact information</span>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-green-500 mr-2">✓</span>
+                                    <span>Medical history & allergies</span>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-green-500 mr-2">✓</span>
+                                    <span>Detailed symptom description</span>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-green-500 mr-2">✓</span>
+                                    <span>AI urgency assessment</span>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-green-500 mr-2">✓</span>
+                                    <span>Care recommendations</span>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-green-500 mr-2">✓</span>
+                                    <span>Professional PDF format</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="downloadPDF()" class="w-full pulse-glow bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl text-lg font-semibold hover:shadow-2xl transform hover:scale-105 transition flex items-center justify-center">
+                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Download Medical Summary (PDF)
+                        </button>
+                    </div>
+
+                    <div class="flex justify-between">
+                        <button onclick="goToStep3()" class="px-8 py-3 bg-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-300 transition">
+                            Back
+                        </button>
+                        <button onclick="startOver()" class="px-8 py-3 bg-gradient-to-r from-gray-600 to-gray-800 text-white rounded-full font-semibold hover:shadow-xl transition">
+                            New Assessment
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Emergency Banner -->
+        <div id="emergencyBanner" class="hidden fixed bottom-0 left-0 right-0 bg-gradient-to-r from-red-600 to-red-700 text-white py-4 px-6 shadow-2xl z-50 emergency-pulse">
+            <div class="max-w-6xl mx-auto flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"/>
+                    </svg>
+                    <div>
+                        <p class="font-bold text-lg">⚠️ EMERGENCY DETECTED</p>
+                        <p class="text-sm">Call 108 (Emergency) or 102 (Ambulance) immediately</p>
+                    </div>
+                </div>
+                <button onclick="hideEmergencyBanner()" class="text-white hover:text-gray-200 transition">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Language Modal -->
+        <div id="languageModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay">
+            <div class="glass-card rounded-3xl p-8 max-w-md w-full mx-4 slide-in-up">
+                <h3 class="text-2xl font-bold gradient-text mb-6" data-translate="selectLanguage">Select Language</h3>
+                <div class="space-y-3">
+                    <button onclick="setLanguage('en')" class="w-full text-left px-6 py-4 bg-white rounded-xl border-2 border-gray-200 hover:border-purple-400 hover:shadow-lg transition font-medium">
+                        🇺🇸 English
+                    </button>
+                    <button onclick="setLanguage('hi')" class="w-full text-left px-6 py-4 bg-white rounded-xl border-2 border-gray-200 hover:border-purple-400 hover:shadow-lg transition font-medium">
+                        🇮🇳 हिन्दी
+                    </button>
+                </div>
+                <button onclick="closeLanguageSelector()" class="w-full mt-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition font-semibold" data-translate="close">
+                    Close
+                </button>
+            </div>
+        </div>
+
+        <!-- Help Modal -->
+        <div id="helpModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay">
+            <div class="glass-card rounded-3xl p-8 max-w-2xl w-full mx-4 max-h-[85vh] overflow-y-auto">
+                <h3 class="text-3xl font-bold gradient-text mb-6">How SmartTriage Works</h3>
+                <div class="space-y-6">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">👤</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">Step 1: Basic Information</h4>
+                            <p class="text-gray-600">Share your personal details and medical history to help doctors understand your background quickly.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">🩺</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">Step 2: Symptom Assessment</h4>
+                            <p class="text-gray-600">Describe your symptoms in detail. Our AI analyzes the information to determine urgency level.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">⚕️</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">Step 3: Triage Results</h4>
+                            <p class="text-gray-600">Get your urgency assessment (Low, Moderate, or Emergency) with personalized care recommendations.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">📍</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">Step 4: Find Care & Download</h4>
+                            <p class="text-gray-600">Locate nearby facilities and download a professional PDF summary to bring to your appointment.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-red-50 border-l-4 border-red-500 p-5 rounded-lg mt-6">
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-red-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"/>
+                        </svg>
+                        <div>
+                            <p class="font-bold text-red-800 mb-1">Emergency Warning</p>
+                            <p class="text-sm text-red-700">If experiencing severe symptoms like chest pain, difficulty breathing, severe bleeding, or loss of consciousness, call 108 (Emergency) or 102 (Ambulance) immediately. Do not rely on this app for emergencies.</p>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="closeHelp()" class="w-full mt-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold hover:shadow-xl transition">
+                    Got It!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let patientData = {};
+        let triageLevel = '';
+        let selectedCategory = '';
+        let currentLanguage = 'en';
+
+        // Translation dictionary
+        const translations = {
+            en: {
+                appTitle: 'SmartTriage',
+                appSubtitle: 'Your Healthcare Navigator',
+                welcomeTitle: 'Welcome to SmartTriage',
+                welcomeDescription: 'Get AI-powered health assessments and find the right care facility near you in minutes',
+                quickAssessment: 'Quick Assessment',
+                quickAssessmentDesc: 'Get your urgency level in minutes',
+                aiPowered: 'AI-Powered',
+                aiPoweredDesc: 'Smart triage recommendations',
+                findCare: 'Find Care',
+                findCareDesc: 'Locate nearby facilities instantly',
+                startAssessment: 'Start Your Assessment',
+                step1Title: 'Tell us about yourself',
+                step1Subtitle: 'We need some basic information to help you',
+                fullName: 'Full Name',
+                age: 'Age',
+                gender: 'Gender',
+                selectGender: 'Select gender',
+                male: 'Male',
+                female: 'Female',
+                other: 'Other',
+                preferNotToSay: 'Prefer not to say',
+                contactNumber: 'Contact Number',
+                emailAddress: 'Email Address',
+                knownAllergies: 'Known Allergies',
+                currentMedications: 'Current Medications',
+                back: 'Back',
+                continue: 'Continue',
+                step2Title: 'What brings you here?',
+                step2Subtitle: 'Tell us about your symptoms',
+                symptomQuestion: 'What type of symptoms are you experiencing?',
+                pain: 'Pain',
+                respiratory: 'Respiratory',
+                digestive: 'Digestive',
+                fever: 'Fever',
+                injury: 'Injury',
+                neurological: 'Neurological',
+                describeSymptoms: 'Describe your symptoms',
+                whenDidItStart: 'When did it start?',
+                selectDuration: 'Select duration',
+                lessThanHour: 'Less than 1 hour ago',
+                oneToSixHours: '1-6 hours ago',
+                sixToTwentyFourHours: '6-24 hours ago',
+                oneToThreeDays: '1-3 days ago',
+                moreThanThreeDays: 'More than 3 days ago',
+                moreThanWeek: 'More than a week ago',
+                painLevel: 'Pain Level (if applicable)',
+                noPain: 'No pain',
+                worstPain: 'Worst pain',
+                checkIfApply: 'Check if any apply:',
+                difficultyBreathing: 'Difficulty breathing or shortness of breath',
+                chestPain: 'Chest pain or pressure',
+                confusion: 'Confusion or difficulty speaking',
+                severeBleeding: 'Severe bleeding or injury',
+                lossOfConsciousness: 'Loss of consciousness or fainting',
+                analyzeSymptoms: 'Analyze Symptoms',
+                step3Title: 'Your Assessment Results',
+                step3Subtitle: 'Based on the information you provided',
+                medicalDisclaimer: 'Medical Disclaimer',
+                disclaimerText: 'This is an AI-assisted assessment and should not replace professional medical advice. If you\'re experiencing a life-threatening emergency, call 108 or 102 immediately.',
+                recommendedActions: 'Recommended Actions:',
+                findFacilities: 'Find Facilities',
+                step4Title: 'Find Nearby Care',
+                step4Subtitle: 'Locate healthcare facilities near you',
+                enterLocation: 'Enter your city or PIN code',
+                search: 'Search',
+                step4SummaryTitle: 'Medical Intake Summary',
+                step4SummarySubtitle: 'Download your complete health summary',
+                whatsIncluded: 'What\'s included:',
+                personalInfo: 'Personal & contact information',
+                medicalHistory: 'Medical history & allergies',
+                symptomDescription: 'Detailed symptom description',
+                urgencyAssessment: 'AI urgency assessment',
+                careRecommendations: 'Care recommendations',
+                professionalPDF: 'Professional PDF format',
+                downloadPDF: 'Download Medical Summary (PDF)',
+                newAssessment: 'New Assessment',
+                emergencyDetected: 'EMERGENCY DETECTED',
+                emergencyCall: 'Call 108 (Emergency) or 102 (Ambulance) immediately',
+                selectLanguage: 'Select Language',
+                close: 'Close',
+                helpTitle: 'How SmartTriage Works',
+                step1Help: 'Step 1: Basic Information',
+                step1HelpDesc: 'Share your personal details and medical history to help doctors understand your background quickly.',
+                step2Help: 'Step 2: Symptom Assessment',
+                step2HelpDesc: 'Describe your symptoms in detail. Our AI analyzes the information to determine urgency level.',
+                step3Help: 'Step 3: Triage Results',
+                step3HelpDesc: 'Get your urgency assessment (Low, Moderate, or Emergency) with personalized care recommendations.',
+                step4Help: 'Step 4: Find Care & Download',
+                step4HelpDesc: 'Locate nearby facilities and download a professional PDF summary to bring to your appointment.',
+                emergencyWarning: 'Emergency Warning',
+                emergencyWarningText: 'If experiencing severe symptoms like chest pain, difficulty breathing, severe bleeding, or loss of consciousness, call 108 (Emergency) or 102 (Ambulance) immediately. Do not rely on this app for emergencies.',
+                gotIt: 'Got It!',
+                getDirections: 'Get Directions',
+                stepInfo: 'Info',
+                stepSymptoms: 'Symptoms',
+                stepAssessment: 'Assessment',
+                stepResults: 'Results'
+            },
+            hi: {
+                appTitle: 'स्मार्टट्राइएज',
+                appSubtitle: 'आपका स्वास्थ्य मार्गदर्शक',
+                welcomeTitle: 'स्मार्टट्राइएज में आपका स्वागत है',
+                welcomeDescription: 'मिनटों में एआई-संचालित स्वास्थ्य मूल्यांकन प्राप्त करें और अपने पास सही देखभाल सुविधा खोजें',
+                quickAssessment: 'त्वरित मूल्यांकन',
+                quickAssessmentDesc: 'मिनटों में अपना तात्कालिकता स्तर प्राप्त करें',
+                aiPowered: 'एआई-संचालित',
+                aiPoweredDesc: 'स्मार्ट ट्राइएज सिफारिशें',
+                findCare: 'देखभाल खोजें',
+                findCareDesc: 'तुरंत पास की सुविधाएं खोजें',
+                startAssessment: 'अपना मूल्यांकन शुरू करें',
+                step1Title: 'अपने बारे में बताएं',
+                step1Subtitle: 'आपकी मदद के लिए हमें कुछ बुनियादी जानकारी चाहिए',
+                fullName: 'पूरा नाम',
+                age: 'उम्र',
+                gender: 'लिंग',
+                selectGender: 'लिंग चुनें',
+                male: 'पुरुष',
+                female: 'महिला',
+                other: 'अन्य',
+                preferNotToSay: 'नहीं बताना चाहते',
+                contactNumber: 'संपर्क नंबर',
+                emailAddress: 'ईमेल पता',
+                knownAllergies: 'ज्ञात एलर्जी',
+                currentMedications: 'वर्तमान दवाएं',
+                back: 'वापस',
+                continue: 'जारी रखें',
+                step2Title: 'आप यहाँ क्यों आए हैं?',
+                step2Subtitle: 'अपने लक्षणों के बारे में बताएं',
+                symptomQuestion: 'आप किस प्रकार के लक्षणों का अनुभव कर रहे हैं?',
+                pain: 'दर्द',
+                respiratory: 'श्वसन',
+                digestive: 'पाचन',
+                fever: 'बुखार',
+                injury: 'चोट',
+                neurological: 'तंत्रिका संबंधी',
+                describeSymptoms: 'अपने लक्षणों का वर्णन करें',
+                whenDidItStart: 'यह कब शुरू हुआ?',
+                selectDuration: 'अवधि चुनें',
+                lessThanHour: '1 घंटे से कम पहले',
+                oneToSixHours: '1-6 घंटे पहले',
+                sixToTwentyFourHours: '6-24 घंटे पहले',
+                oneToThreeDays: '1-3 दिन पहले',
+                moreThanThreeDays: '3 दिन से अधिक पहले',
+                moreThanWeek: 'एक सप्ताह से अधिक पहले',
+                painLevel: 'दर्द का स्तर (यदि लागू हो)',
+                noPain: 'कोई दर्द नहीं',
+                worstPain: 'सबसे खराब दर्द',
+                checkIfApply: 'यदि कोई लागू हो तो चेक करें:',
+                difficultyBreathing: 'सांस लेने में कठिनाई या सांस की तकलीफ',
+                chestPain: 'सीने में दर्द या दबाव',
+                confusion: 'भ्रम या बोलने में कठिनाई',
+                severeBleeding: 'गंभीर रक्तस्राव या चोट',
+                lossOfConsciousness: 'चेतना की हानि या बेहोशी',
+                analyzeSymptoms: 'लक्षणों का विश्लेषण करें',
+                step3Title: 'आपके मूल्यांकन परिणाम',
+                step3Subtitle: 'आपके द्वारा प्रदान की गई जानकारी के आधार पर',
+                medicalDisclaimer: 'चिकित्सा अस्वीकरण',
+                disclaimerText: 'यह एक एआई-सहायता प्राप्त मूल्यांकन है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। यदि आप जीवन-घातक आपातकाल का सामना कर रहे हैं, तो तुरंत 108 या 102 पर कॉल करें।',
+                recommendedActions: 'अनुशंसित कार्य:',
+                findFacilities: 'सुविधाएं खोजें',
+                step4Title: 'पास में देखभाल खोजें',
+                step4Subtitle: 'अपने पास स्वास्थ्य सुविधाएं खोजें',
+                enterLocation: 'अपना शहर या पिन कोड दर्ज करें',
+                search: 'खोजें',
+                step4SummaryTitle: 'चिकित्सा इंटेक सारांश',
+                step4SummarySubtitle: 'अपना पूर्ण स्वास्थ्य सारांश डाउनलोड करें',
+                whatsIncluded: 'क्या शामिल है:',
+                personalInfo: 'व्यक्तिगत और संपर्क जानकारी',
+                medicalHistory: 'चिकित्सा इतिहास और एलर्जी',
+                symptomDescription: 'विस्तृत लक्षण विवरण',
+                urgencyAssessment: 'एआई तात्कालिकता मूल्यांकन',
+                careRecommendations: 'देखभाल की सिफारिशें',
+                professionalPDF: 'पेशेवर पीडीएफ प्रारूप',
+                downloadPDF: 'चिकित्सा सारांश डाउनलोड करें (PDF)',
+                newAssessment: 'नया मूल्यांकन',
+                emergencyDetected: 'आपातकाल का पता चला',
+                emergencyCall: 'तुरंत 108 (आपातकाल) या 102 (एम्बुलेंस) पर कॉल करें',
+                selectLanguage: 'भाषा चुनें',
+                close: 'बंद करें',
+                helpTitle: 'स्मार्टट्राइएज कैसे काम करता है',
+                step1Help: 'चरण 1: बुनियादी जानकारी',
+                step1HelpDesc: 'अपना व्यक्तिगत विवरण और चिकित्सा इतिहास साझा करें ताकि डॉक्टर आपकी पृष्ठभूमि को जल्दी समझ सकें।',
+                step2Help: 'चरण 2: लक्षण मूल्यांकन',
+                step2HelpDesc: 'अपने लक्षणों का विस्तार से वर्णन करें। हमारी एआई तात्कालिकता स्तर निर्धारित करने के लिए जानकारी का विश्लेषण करती है।',
+                step3Help: 'चरण 3: ट्राइएज परिणाम',
+                step3HelpDesc: 'व्यक्तिगत देखभाल सिफारिशों के साथ अपना तात्कालिकता मूल्यांकन (निम्न, मध्यम, या आपातकाल) प्राप्त करें।',
+                step4Help: 'चरण 4: देखभाल खोजें और डाउनलोड करें',
+                step4HelpDesc: 'पास की सुविधाएं खोजें और अपनी नियुक्ति पर ले जाने के लिए एक पेशेवर पीडीएफ सारांश डाउनलोड करें।',
+                emergencyWarning: 'आपातकालीन चेतावनी',
+                emergencyWarningText: 'यदि सीने में दर्द, सांस लेने में कठिनाई, गंभीर रक्तस्राव, या चेतना की हानि जैसे गंभीर लक्षणों का अनुभव कर रहे हैं, तो तुरंत 108 (आपातकाल) या 102 (एम्बुलेंस) पर कॉल करें। आपात स्थिति के लिए इस ऐप पर भरोसा न करें।',
+                gotIt: 'समझ गया!',
+                getDirections: 'दिशा-निर्देश प्राप्त करें',
+                stepInfo: 'जानकारी',
+                stepSymptoms: 'लक्षण',
+                stepAssessment: 'मूल्यांकन',
+                stepResults: 'परिणाम'
+            }
+        };
+
+        function translate(key) {
+            return translations[currentLanguage][key] || translations['en'][key] || key;
+        }
+
+        function updatePageLanguage() {
+            const lang = currentLanguage;
+            const t = translations[lang];
+
+            // Update header
+            document.getElementById('appTitle').textContent = t.appTitle;
+            document.getElementById('appSubtitle').textContent = t.appSubtitle;
+
+            // Update welcome screen
+            const welcomeTitle = document.querySelector('#welcomeScreen h2');
+            const welcomeDesc = document.querySelector('#welcomeScreen p.text-xl');
+            if (welcomeTitle) welcomeTitle.textContent = t.welcomeTitle;
+            if (welcomeDesc) welcomeDesc.textContent = t.welcomeDesc;
+
+            // Update all buttons and labels
+            document.querySelectorAll('.step-circle').forEach((circle, index) => {
+                const labels = ['stepInfo', 'stepSymptoms', 'stepAssessment', 'stepResults'];
+                const label = circle.nextElementSibling;
+                if (label) label.textContent = t[labels[index]];
+            });
+
+            // Update modals
+            const langModalTitle = document.querySelector('#languageModal h3');
+            if (langModalTitle) langModalTitle.textContent = t.selectLanguage;
+
+            const helpModalTitle = document.querySelector('#helpModal h3');
+            if (helpModalTitle) helpModalTitle.textContent = t.helpTitle;
+
+            // Force re-render current screen
+            const currentStep = getCurrentStep();
+            if (currentStep === 'welcome') {
+                renderWelcomeScreen();
+            } else if (currentStep === 'step1') {
+                renderStep1();
+            } else if (currentStep === 'step2') {
+                renderStep2();
+            } else if (currentStep === 'step3') {
+                renderStep3();
+            } else if (currentStep === 'step4') {
+                renderStep4();
+            }
+        }
+
+        function getCurrentStep() {
+            if (!document.getElementById('welcomeScreen').classList.contains('hidden')) return 'welcome';
+            if (!document.getElementById('step1').classList.contains('hidden')) return 'step1';
+            if (!document.getElementById('step2').classList.contains('hidden')) return 'step2';
+            if (!document.getElementById('step3').classList.contains('hidden')) return 'step3';
+            if (!document.getElementById('step4').classList.contains('hidden')) return 'step4';
+            return 'welcome';
+        }
+
+        function renderWelcomeScreen() {
+            const t = translations[currentLanguage];
+            document.querySelector('#welcomeScreen h2').innerHTML = t.welcomeTitle;
+            document.querySelector('#welcomeScreen p.text-xl').innerHTML = t.welcomeDesc;
+            document.querySelectorAll('#welcomeScreen .grid > div h3')[0].textContent = t.quickAssessment;
+            document.querySelectorAll('#welcomeScreen .grid > div p')[0].textContent = t.quickAssessmentDesc;
+            document.querySelectorAll('#welcomeScreen .grid > div h3')[1].textContent = t.aiPowered;
+            document.querySelectorAll('#welcomeScreen .grid > div p')[1].textContent = t.aiPoweredDesc;
+            document.querySelectorAll('#welcomeScreen .grid > div h3')[2].textContent = t.findCare;
+            document.querySelectorAll('#welcomeScreen .grid > div p')[2].textContent = t.findCareDesc;
+            const startBtn = document.querySelector('#welcomeScreen button');
+            if (startBtn) {
+                const btnText = startBtn.childNodes[0];
+                if (btnText.nodeType === 3) btnText.textContent = t.startButton + ' ';
+            }
+        }
+
+        function renderStep1() {
+            const t = translations[currentLanguage];
+            document.querySelector('#step1 h2').textContent = t.step1Title;
+            document.querySelector('#step1 h2').nextElementSibling.textContent = t.step1Subtitle;
+
+            const labels = document.querySelectorAll('#step1 label');
+            if (labels[0]) labels[0].textContent = t.fullName;
+            if (labels[1]) labels[1].textContent = t.age;
+            if (labels[2]) labels[2].textContent = t.gender;
+            if (labels[3]) labels[3].textContent = t.contactNumber;
+            if (labels[4]) labels[4].textContent = t.emailAddress;
+            if (labels[5]) labels[5].textContent = t.knownAllergies;
+            if (labels[6]) labels[6].textContent = t.currentMeds;
+
+            document.getElementById('patientName').placeholder = t.namePlaceholder;
+            document.getElementById('patientAge').placeholder = t.agePlaceholder;
+            document.getElementById('patientPhone').placeholder = t.phonePlaceholder;
+            document.getElementById('patientEmail').placeholder = t.emailPlaceholder;
+            document.getElementById('patientAllergies').placeholder = t.allergiesPlaceholder;
+            document.getElementById('patientMedications').placeholder = t.medsPlaceholder;
+
+            const genderSelect = document.getElementById('patientGender');
+            genderSelect.options[0].text = t.selectGender;
+            genderSelect.options[1].text = t.male;
+            genderSelect.options[2].text = t.female;
+            genderSelect.options[3].text = t.other;
+            genderSelect.options[4].text = t.preferNotSay;
+
+            const buttons = document.querySelectorAll('#step1 button');
+            buttons[0].textContent = t.back;
+            if (buttons[1]) {
+                const btnText = buttons[1].childNodes[0];
+                if (btnText.nodeType === 3) btnText.textContent = t.continue + ' ';
+            }
+        }
+
+        function renderStep2() {
+            const t = translations[currentLanguage];
+            document.querySelector('#step2 h2').textContent = t.step2Title;
+            document.querySelector('#step2 h2').nextElementSibling.textContent = t.step2Subtitle;
+
+            document.querySelectorAll('#step2 label')[0].textContent = t.symptomQuestion;
+            document.querySelectorAll('#step2 .symptom-card p')[0].textContent = t.pain;
+            document.querySelectorAll('#step2 .symptom-card p')[1].textContent = t.respiratory;
+            document.querySelectorAll('#step2 .symptom-card p')[2].textContent = t.digestive;
+            document.querySelectorAll('#step2 .symptom-card p')[3].textContent = t.fever;
+            document.querySelectorAll('#step2 .symptom-card p')[4].textContent = t.injury;
+            document.querySelectorAll('#step2 .symptom-card p')[5].textContent = t.neurological;
+
+            document.querySelectorAll('#step2 > div > div > div > label')[1].textContent = t.describeSymptoms;
+            document.getElementById('symptomDescription').placeholder = t.symptomsPlaceholder;
+
+            document.querySelectorAll('#step2 > div > div > div > label')[2].textContent = t.whenStart;
+            const durationSelect = document.getElementById('symptomDuration');
+            durationSelect.options[0].text = t.selectDuration;
+            durationSelect.options[1].text = t.lessThan1Hr;
+            durationSelect.options[2].text = t.hrs1to6;
+            durationSelect.options[3].text = t.hrs6to24;
+            durationSelect.options[4].text = t.days1to3;
+            durationSelect.options[5].text = t.moreThan3Days;
+            durationSelect.options[6].text = t.moreThanWeek;
+
+            document.querySelectorAll('#step2 .bg-gradient-to-br label')[0].textContent = t.painLevel;
+
+            document.querySelectorAll('#step2 > div > div > div > label')[4].textContent = t.checkIfApply;
+
+            const checkboxLabels = document.querySelectorAll('#step2 .space-y-3 label span');
+            if (checkboxLabels[0]) checkboxLabels[0].textContent = t.diffBreathing;
+            if (checkboxLabels[1]) checkboxLabels[1].textContent = t.chestPain;
+            if (checkboxLabels[2]) checkboxLabels[2].textContent = t.confusion;
+            if (checkboxLabels[3]) checkboxLabels[3].textContent = t.severeBleed;
+            if (checkboxLabels[4]) checkboxLabels[4].textContent = t.lossConsciousness;
+
+            const buttons = document.querySelectorAll('#step2 button');
+            buttons[0].textContent = t.back;
+            if (buttons[1]) {
+                const btnText = buttons[1].childNodes[0];
+                if (btnText.nodeType === 3) btnText.textContent = t.analyzeButton + ' ';
+            }
+        }
+
+        function renderStep3() {
+            const t = translations[currentLanguage];
+            document.querySelector('#step3 h2').textContent = t.step3Title;
+            document.querySelector('#step3 h2').nextElementSibling.textContent = t.step3Subtitle;
+
+            const disclaimer = document.querySelector('#step3 .bg-yellow-50 p.font-semibold');
+            if (disclaimer) disclaimer.textContent = t.disclaimer;
+            const disclaimerText = document.querySelector('#step3 .bg-yellow-50 p.text-sm');
+            if (disclaimerText) disclaimerText.textContent = t.disclaimerText;
+
+            const buttons = document.querySelectorAll('#step3 button');
+            buttons[0].textContent = t.back;
+            if (buttons[1]) {
+                const btnText = buttons[1].childNodes[0];
+                if (btnText.nodeType === 3) btnText.textContent = t.findFacilities + ' ';
+            }
+        }
+
+        function renderStep4() {
+            const t = translations[currentLanguage];
+            document.querySelector('#step4 h2').textContent = t.step4FindTitle;
+            document.querySelector('#step4 h2').nextElementSibling.textContent = t.step4FindSubtitle;
+
+            document.getElementById('userLocation').placeholder = t.locationPlaceholder;
+            document.querySelectorAll('#step4 button')[1].textContent = t.searchButton;
+
+            const summaryTitle = document.querySelectorAll('#step4 h2')[1];
+            if (summaryTitle) summaryTitle.textContent = t.step4SummaryTitle;
+            const summarySubtitle = document.querySelectorAll('#step4 h2')[1].nextElementSibling;
+            if (summarySubtitle) summarySubtitle.textContent = t.step4SummarySubtitle;
+
+            const downloadBtn = document.querySelectorAll('#step4 button.pulse-glow')[0];
+            if (downloadBtn) {
+                const btnText = downloadBtn.childNodes[1];
+                if (btnText && btnText.nodeType === 3) btnText.textContent = ' ' + t.downloadPDFButton;
+            }
+
+            const buttons = document.querySelectorAll('#step4 > div.flex button');
+            if (buttons[0]) buttons[0].textContent = t.back;
+            if (buttons[1]) buttons[1].textContent = t.newAssessment;
+        }
+
+        // Navigation
+        function startAssessment() {
+            hideAllScreens();
+            document.getElementById('step1').classList.remove('hidden');
+            updateStepIndicator(1);
+        }
+
+        function goToWelcome() {
+            hideAllScreens();
+            document.getElementById('welcomeScreen').classList.remove('hidden');
+            updateStepIndicator(0);
+        }
+
+        function goToStep1() {
+            hideAllScreens();
+            document.getElementById('step1').classList.remove('hidden');
+            updateStepIndicator(1);
+        }
+
+        function goToStep2() {
+            if (!validateStep1()) return;
+            collectStep1Data();
+            hideAllScreens();
+            document.getElementById('step2').classList.remove('hidden');
+            updateStepIndicator(2);
+        }
+
+        function goToStep3() {
+            if (!validateStep2()) return;
+            collectStep2Data();
+            performTriage();
+            hideAllScreens();
+            document.getElementById('step3').classList.remove('hidden');
+            updateStepIndicator(3);
+        }
+
+        function goToStep4() {
+            hideAllScreens();
+            document.getElementById('step4').classList.remove('hidden');
+            updateStepIndicator(4);
+        }
+
+        function hideAllScreens() {
+            ['welcomeScreen', 'step1', 'step2', 'step3', 'step4'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+        }
+
+        function updateStepIndicator(step) {
+            for (let i = 1; i <= 4; i++) {
+                const circle = document.getElementById(`stepCircle${i}`);
+                circle.classList.remove('active', 'completed', 'pending');
+
+                if (i < step) {
+                    circle.classList.add('completed');
+                    circle.innerHTML = '✓';
+                } else if (i === step) {
+                    circle.classList.add('active');
+                    circle.innerHTML = i;
+                } else {
+                    circle.classList.add('pending');
+                    circle.innerHTML = i;
+                }
+            }
+        }
+
+        // Validation
+        function validateStep1() {
+            const name = document.getElementById('patientName').value.trim();
+            const age = document.getElementById('patientAge').value;
+            const gender = document.getElementById('patientGender').value;
+
+            if (!name || !age || !gender) {
+                alert('Please fill in all required fields (Name, Age, Gender)');
+                return false;
+            }
+
+            if (age < 0 || age > 120) {
+                alert('Please enter a valid age');
+                return false;
+            }
+
+            return true;
+        }
+
+        function validateStep2() {
+            const category = document.getElementById('symptomCategory').value;
+            const description = document.getElementById('symptomDescription').value.trim();
+            const duration = document.getElementById('symptomDuration').value;
+
+            if (!category) {
+                alert('Please select a symptom category');
+                return false;
+            }
+
+            if (!description) {
+                alert('Please describe your symptoms');
+                return false;
+            }
+
+            if (!duration) {
+                alert('Please select when your symptoms started');
+                return false;
+            }
+
+            return true;
+        }
+
+        // Data collection
+        function collectStep1Data() {
+            patientData.name = document.getElementById('patientName').value.trim();
+            patientData.age = document.getElementById('patientAge').value;
+            patientData.gender = document.getElementById('patientGender').value;
+            patientData.phone = document.getElementById('patientPhone').value.trim();
+            patientData.email = document.getElementById('patientEmail').value.trim();
+            patientData.allergies = document.getElementById('patientAllergies').value.trim() || 'None reported';
+            patientData.medications = document.getElementById('patientMedications').value.trim() || 'None reported';
+        }
+
+        function collectStep2Data() {
+            patientData.symptomCategory = selectedCategory;
+            patientData.symptomDescription = document.getElementById('symptomDescription').value.trim();
+            patientData.symptomDuration = document.getElementById('symptomDuration').value;
+            patientData.painLevel = document.getElementById('painLevel').value;
+            patientData.difficultBreathing = document.getElementById('symptomDifficultBreathing').checked;
+            patientData.chestPain = document.getElementById('symptomChestPain').checked;
+            patientData.confusion = document.getElementById('symptomConfusion').checked;
+            patientData.bleeding = document.getElementById('symptomBleeding').checked;
+            patientData.unconscious = document.getElementById('symptomUnconscious').checked;
+        }
+
+        // Symptom category selection
+        function selectCategory(category, element) {
+            selectedCategory = category;
+            document.getElementById('symptomCategory').value = category;
+
+            // Remove selected class from all cards
+            document.querySelectorAll('.symptom-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Add selected class to clicked card
+            element.classList.add('selected');
+        }
+
+        // Pain level slider
+        function updatePainLabel(value) {
+            document.getElementById('painLevelLabel').textContent = value;
+        }
+
+        // Triage logic
+        function performTriage() {
+            let score = 0;
+            let emergencyFlags = [];
+
+            // Emergency indicators
+            if (patientData.difficultBreathing) {
+                score += 30;
+                emergencyFlags.push('Difficulty breathing');
+            }
+            if (patientData.chestPain) {
+                score += 30;
+                emergencyFlags.push('Chest pain');
+            }
+            if (patientData.confusion) {
+                score += 25;
+                emergencyFlags.push('Confusion or speech difficulty');
+            }
+            if (patientData.bleeding) {
+                score += 25;
+                emergencyFlags.push('Severe bleeding');
+            }
+            if (patientData.unconscious) {
+                score += 30;
+                emergencyFlags.push('Loss of consciousness');
+            }
+
+            // Pain level
+            if (patientData.painLevel >= 8) {
+                score += 20;
+            } else if (patientData.painLevel >= 5) {
+                score += 10;
+            }
+
+            // Duration
+            if (patientData.symptomDuration === 'less-than-hour') {
+                score += 10;
+            } else if (patientData.symptomDuration === '1-6-hours') {
+                score += 8;
+            }
+
+            // Category-specific scoring
+            if (patientData.symptomCategory === 'injury' && patientData.painLevel >= 6) {
+                score += 15;
+            }
+            if (patientData.symptomCategory === 'neurological') {
+                score += 15;
+            }
+
+            // Determine triage level
+            if (score >= 40 || emergencyFlags.length >= 2) {
+                triageLevel = 'EMERGENCY';
+                displayEmergencyBanner();
+            } else if (score >= 20) {
+                triageLevel = 'MODERATE';
+            } else {
+                triageLevel = 'LOW';
+            }
+
+            displayTriageResults(emergencyFlags);
+        }
+
+        function displayTriageResults(emergencyFlags) {
+            const resultDiv = document.getElementById('triageResult');
+            const recommendationsDiv = document.getElementById('recommendations');
+
+            let bgClass, icon, iconColor, title, description, recommendations;
+
+            if (triageLevel === 'EMERGENCY') {
+                bgClass = 'bg-gradient-to-br from-red-50 to-pink-50 border-4 border-red-300';
+                icon = '🚨';
+                iconColor = 'text-red-600';
+                title = 'EMERGENCY - Immediate Care Required';
+                description = 'Based on your symptoms, you need emergency medical attention right away.';
+                recommendations = [
+                    { icon: '🚑', text: 'Call 108 (Emergency) or 102 (Ambulance) immediately', color: 'red' },
+                    { icon: '🏥', text: 'Go to the nearest hospital emergency department', color: 'red' },
+                    { icon: '💊', text: 'Bring all current medications with you', color: 'orange' },
+                    { icon: '📋', text: 'Download your intake summary below', color: 'blue' }
+                ];
+            } else if (triageLevel === 'MODERATE') {
+                bgClass = 'bg-gradient-to-br from-orange-50 to-yellow-50 border-4 border-orange-300';
+                icon = '⚠️';
+                iconColor = 'text-orange-600';
+                title = 'MODERATE Urgency - Prompt Care Recommended';
+                description = 'Your symptoms indicate you should see a healthcare provider soon, ideally within 24 hours.';
+                recommendations = [
+                    { icon: '🏥', text: 'Visit a walk-in clinic or hospital OPD today', color: 'orange' },
+                    { icon: '📞', text: 'Consider calling a doctor for same-day appointment', color: 'orange' },
+                    { icon: '👀', text: 'Monitor symptoms - seek emergency care if they worsen', color: 'red' },
+                    { icon: '📋', text: 'Bring your intake summary to the appointment', color: 'blue' }
+                ];
+            } else {
+                bgClass = 'bg-gradient-to-br from-green-50 to-emerald-50 border-4 border-green-300';
+                icon = '✅';
+                iconColor = 'text-green-600';
+                title = 'LOW Urgency - Routine Care Appropriate';
+                description = 'Your symptoms appear manageable and suitable for routine medical care.';
+                recommendations = [
+                    { icon: '📅', text: 'Schedule an appointment with your doctor', color: 'green' },
+                    { icon: '💊', text: 'Continue current medications as prescribed', color: 'blue' },
+                    { icon: '📝', text: 'Keep track of any symptom changes', color: 'blue' },
+                    { icon: '📋', text: 'Bring your intake summary to the appointment', color: 'blue' }
+                ];
+            }
+
+            resultDiv.innerHTML = `
+                <div class="${bgClass} p-8 rounded-3xl urgency-badge">
+                    <div class="flex items-center justify-center mb-6">
+                        <div class="text-8xl">${icon}</div>
+                    </div>
+                    <h3 class="text-3xl font-bold text-center ${iconColor} mb-3">${title}</h3>
+                    <p class="text-center text-gray-700 text-lg mb-6">${description}</p>
+                    ${emergencyFlags.length > 0 ? `
+                        <div class="bg-white bg-opacity-70 p-5 rounded-2xl">
+                            <p class="font-bold text-gray-900 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"/>
+                                </svg>
+                                Emergency indicators detected:
+                            </p>
+                            <ul class="space-y-2">
+                                ${emergencyFlags.map(flag => `<li class="flex items-center text-gray-800"><span class="text-red-500 mr-2">•</span>${flag}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            const colorClasses = {
+                red: 'bg-red-50 border-red-200',
+                orange: 'bg-orange-50 border-orange-200',
+                green: 'bg-green-50 border-green-200',
+                blue: 'bg-blue-50 border-blue-200'
+            };
+
+            recommendationsDiv.innerHTML = `
+                <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <svg class="w-6 h-6 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Recommended Actions:
+                </h3>
+                ${recommendations.map(rec => `
+                    <div class="flex items-start space-x-4 p-5 ${colorClasses[rec.color]} border-2 rounded-2xl transition hover:shadow-lg">
+                        <span class="text-4xl flex-shrink-0">${rec.icon}</span>
+                        <p class="flex-1 text-gray-800 font-medium pt-2">${rec.text}</p>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        // Facility search
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                document.getElementById('userLocation').value = 'Getting location...';
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        document.getElementById('userLocation').value = `${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`;
+                    },
+                    error => {
+                        document.getElementById('userLocation').value = '';
+                        alert('Unable to get your location. Please enter it manually.');
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
+        }
+
+        function searchFacilities() {
+            const location = document.getElementById('userLocation').value.trim();
+            if (!location) {
+                alert('Please enter a location or use your current location');
+                return;
+            }
+
+            document.getElementById('facilitiesMap').classList.remove('hidden');
+            document.getElementById('facilitiesList').classList.remove('hidden');
+
+            const facilities = generateFacilities();
+            displayFacilities(facilities);
+        }
+
+        function generateFacilities() {
+            if (triageLevel === 'EMERGENCY') {
+                return [
+                    { name: 'Apollo Hospital - Emergency Department', distance: '1.2 km', type: 'Multi-Specialty Hospital', waitTime: 'Immediate', phone: '+91 40 2345 6789', rating: '4.8' },
+                    { name: 'Fortis Hospital - Casualty', distance: '2.8 km', type: 'Super Specialty Hospital', waitTime: 'Immediate', phone: '+91 40 3456 7890', rating: '4.7' },
+                    { name: 'Max Hospital - Trauma Centre', distance: '3.5 km', type: 'Trauma Center', waitTime: 'Immediate', phone: '+91 40 4567 8901', rating: '4.9' },
+                    { name: 'Government General Hospital - Emergency', distance: '4.2 km', type: 'Government Hospital', waitTime: 'Immediate', phone: '108', rating: '4.2' }
+                ];
+            } else if (triageLevel === 'MODERATE') {
+                return [
+                    { name: 'MedPlus Clinic - Express Care', distance: '0.8 km', type: 'Walk-In Clinic', waitTime: '15-30 min', phone: '+91 40 2234 5678', rating: '4.5' },
+                    { name: 'CureFit Health Center', distance: '1.5 km', type: 'Primary Care Clinic', waitTime: '20-40 min', phone: '+91 40 3345 6789', rating: '4.6' },
+                    { name: 'Manipal Clinic - OPD', distance: '2.1 km', type: 'Multi-Specialty Clinic', waitTime: '30-45 min', phone: '+91 40 4456 7890', rating: '4.7' },
+                    { name: 'Apollo Clinic - Walk-In', distance: '2.9 km', type: 'Primary Care', waitTime: '25-35 min', phone: '+91 40 5567 8901', rating: '4.8' }
+                ];
+            } else {
+                return [
+                    { name: 'Family Care Clinic', distance: '0.5 km', type: 'General Physician', waitTime: 'By appointment', phone: '+91 40 1234 5678', rating: '4.6' },
+                    { name: 'Dr. Sharma\'s Clinic', distance: '1.2 km', type: 'General Practice', waitTime: 'Same-day available', phone: '+91 98765 43210', rating: '4.7' },
+                    { name: 'Wellness Polyclinic', distance: '1.8 km', type: 'Multi-Specialty Clinic', waitTime: 'By appointment', phone: '+91 40 2345 6781', rating: '4.5' },
+                    { name: 'Ayushman Health Centre', distance: '2.4 km', type: 'Primary Health Care', waitTime: 'Walk-in available', phone: '+91 40 3456 7892', rating: '4.4' }
+                ];
+            }
+        }
+
+        function displayFacilities(facilities) {
+            const listDiv = document.getElementById('facilitiesList');
+            listDiv.innerHTML = facilities.map(facility => `
+                <div class="facility-card bg-white p-6 rounded-2xl border-2 border-gray-200 hover:shadow-xl transition">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-xl text-gray-900 mb-1">${facility.name}</h4>
+                            <p class="text-sm text-gray-600 mb-2">${facility.type}</p>
+                            <div class="flex items-center space-x-3 text-sm">
+                                <span class="flex items-center text-yellow-600">
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
+                                    ${facility.rating}
+                                </span>
+                                <span class="text-purple-600 font-semibold">${facility.distance}</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="inline-block px-4 py-2 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 rounded-full text-sm font-semibold">
+                                ${facility.waitTime}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        </svg>
+                        <a href="tel:${facility.phone}" class="text-purple-600 hover:underline font-medium">${facility.phone}</a>
+                    </div>
+                    <button onclick="getDirections('${facility.name}')" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                        </svg>
+                        Get Directions
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function getDirections(facilityName) {
+            alert(`Opening directions to ${facilityName}...\n\nIn a production app, this would open Google Maps or your preferred navigation app.`);
+        }
+
+        // PDF generation
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const margin = 20;
+            let yPos = 20;
+
+            // Header
+            doc.setFillColor(102, 126, 234);
+            doc.rect(0, 0, pageWidth, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(26);
+            doc.setFont(undefined, 'bold');
+            doc.text('SmartTriage Medical Report', margin, 20);
+            doc.setFontSize(11);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, margin, 30);
+
+            yPos = 50;
+            doc.setTextColor(0, 0, 0);
+
+            // Patient Information
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text('Patient Information', margin, yPos);
+            yPos += 8;
+
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            const patientInfo = [
+                `Name: ${patientData.name}`,
+                `Age: ${patientData.age} years`,
+                `Gender: ${patientData.gender}`,
+                `Phone: ${patientData.phone || 'Not provided'}`,
+                `Email: ${patientData.email || 'Not provided'}`
+            ];
+            patientInfo.forEach(info => {
+                doc.text(info, margin, yPos);
+                yPos += 6;
+            });
+
+            yPos += 5;
+
+            // Medical History
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text('Medical History', margin, yPos);
+            yPos += 8;
+
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Allergies: ${patientData.allergies}`, margin, yPos);
+            yPos += 6;
+            const splitMedications = doc.splitTextToSize(`Medications: ${patientData.medications}`, pageWidth - (2 * margin));
+            doc.text(splitMedications, margin, yPos);
+            yPos += (splitMedications.length * 5) + 8;
+
+            // Symptoms
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text('Current Symptoms', margin, yPos);
+            yPos += 8;
+
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Category: ${patientData.symptomCategory}`, margin, yPos);
+            yPos += 6;
+            doc.text(`Duration: ${patientData.symptomDuration.replace(/-/g, ' ')}`, margin, yPos);
+            yPos += 6;
+            doc.text(`Pain Level: ${patientData.painLevel}/10`, margin, yPos);
+            yPos += 8;
+
+            doc.text('Description:', margin, yPos);
+            yPos += 6;
+            const splitDescription = doc.splitTextToSize(patientData.symptomDescription, pageWidth - (2 * margin));
+            doc.text(splitDescription, margin, yPos);
+            yPos += (splitDescription.length * 5) + 5;
+
+            // Additional symptoms
+            const additionalSymptoms = [];
+            if (patientData.difficultBreathing) additionalSymptoms.push('Difficulty breathing');
+            if (patientData.chestPain) additionalSymptoms.push('Chest pain');
+            if (patientData.confusion) additionalSymptoms.push('Confusion');
+            if (patientData.bleeding) additionalSymptoms.push('Severe bleeding');
+            if (patientData.unconscious) additionalSymptoms.push('Loss of consciousness');
+
+            if (additionalSymptoms.length > 0) {
+                doc.text('Critical Symptoms:', margin, yPos);
+                yPos += 6;
+                additionalSymptoms.forEach(symptom => {
+                    doc.text(`• ${symptom}`, margin + 5, yPos);
+                    yPos += 5;
+                });
+                yPos += 5;
+            }
+
+            // Triage Assessment
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text('AI-Assisted Triage Assessment', margin, yPos);
+            yPos += 8;
+
+            doc.setFontSize(13);
+            let triageColor;
+            if (triageLevel === 'EMERGENCY') {
+                triageColor = [255, 154, 158];
+            } else if (triageLevel === 'MODERATE') {
+                triageColor = [255, 198, 159];
+            } else {
+                triageColor = [132, 250, 176];
+            }
+            doc.setFillColor(...triageColor);
+            doc.rect(margin, yPos - 4, pageWidth - (2 * margin), 14, 'F');
+            doc.setFont(undefined, 'bold');
+            doc.text(`Urgency Level: ${triageLevel}`, margin + 5, yPos + 4);
+            yPos += 18;
+
+            // Recommendations
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            let recommendations = [];
+            if (triageLevel === 'EMERGENCY') {
+                recommendations = [
+                    'Call 108 (Emergency) or 102 (Ambulance) immediately',
+                    'Go to nearest hospital emergency department',
+                    'Bring all current medications',
+                    'Have someone else drive if possible'
+                ];
+            } else if (triageLevel === 'MODERATE') {
+                recommendations = [
+                    'Visit nearby clinic or hospital OPD today',
+                    'Consider walk-in clinic for faster service',
+                    'Monitor symptoms closely',
+                    'Seek emergency care if symptoms worsen'
+                ];
+            } else {
+                recommendations = [
+                    'Schedule appointment with general physician',
+                    'Continue current medications as prescribed',
+                    'Monitor symptoms for changes',
+                    'Visit doctor if condition worsens'
+                ];
+            }
+
+            doc.text('Recommended Actions:', margin, yPos);
+            yPos += 6;
+            recommendations.forEach(rec => {
+                const splitRec = doc.splitTextToSize(`• ${rec}`, pageWidth - (2 * margin) - 5);
+                doc.text(splitRec, margin + 5, yPos);
+                yPos += (splitRec.length * 5) + 2;
+            });
+
+            // Footer
+            yPos = doc.internal.pageSize.getHeight() - 30;
+            doc.setFontSize(8);
+            doc.setTextColor(128, 128, 128);
+            doc.setFont(undefined, 'bold');
+            doc.text('IMPORTANT DISCLAIMER:', margin, yPos);
+            yPos += 4;
+            doc.setFont(undefined, 'normal');
+            const disclaimer = 'This assessment is AI-assisted and should not replace professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition. In case of emergency, call 108 (Emergency) or 102 (Ambulance) immediately.';
+            const splitDisclaimer = doc.splitTextToSize(disclaimer, pageWidth - (2 * margin));
+            doc.text(splitDisclaimer, margin, yPos);
+
+            // Save
+            doc.save(`SmartTriage-Report-${patientData.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+
+        // Emergency banner
+        function displayEmergencyBanner() {
+            document.getElementById('emergencyBanner').classList.remove('hidden');
+        }
+
+        function hideEmergencyBanner() {
+            document.getElementById('emergencyBanner').classList.add('hidden');
+        }
+
+        // Language selector
+        function showLanguageSelector() {
+            document.getElementById('languageModal').classList.remove('hidden');
+        }
+
+        function closeLanguageSelector() {
+            document.getElementById('languageModal').classList.add('hidden');
+        }
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            updatePageLanguage();
+            closeLanguageSelector();
+        }
+
+        // Help modal
+        function showHelp() {
+            document.getElementById('helpModal').classList.remove('hidden');
+        }
+
+        function closeHelp() {
+            document.getElementById('helpModal').classList.add('hidden');
+        }
+
+        // Start over
+        function startOver() {
+            if (confirm('Start a new assessment? All current data will be cleared.')) {
+                patientData = {};
+                triageLevel = '';
+                selectedCategory = '';
+                document.querySelectorAll('input, textarea, select').forEach(elem => {
+                    if (elem.type === 'checkbox') {
+                        elem.checked = false;
+                    } else {
+                        elem.value = '';
+                    }
+                });
+                document.getElementById('painLevel').value = 0;
+                updatePainLabel(0);
+                document.querySelectorAll('.symptom-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                hideEmergencyBanner();
+                goToWelcome();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('SmartTriage initialized - Modern UI loaded');
+        });
+    </script>
+</body>
+</html>
