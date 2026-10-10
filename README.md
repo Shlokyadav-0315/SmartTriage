@@ -10,7 +10,7 @@
 
 ## 🌐 Live Demo
 
-**👉 [Try SmartTriage Now](https://yourusername.github.io/SmartTriage) 👈**
+**👉 [Try SmartTriage Now](https://Shlokyadav-0315.github.io/SmartTriage) 👈**
 
 Simply open the link above to start using the application immediately - no installation required!
 
